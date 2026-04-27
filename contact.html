@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Contacto — DevBlog</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<nav class="navbar" id="mainNav"><div class="container"><div class="navbar-inner">
+  <a class="brand" href="index.html"><span class="brand-dot"></span>Dev<em>Blog</em></a>
+  <ul class="nav-links"><li><a href="index.html">Home</a></li><li><a href="about.html">Sobre</a></li><li><a href="contact.html" class="active">Contacto</a></li></ul>
+  <div class="nav-actions"></div>
+</div></div></nav>
+<div class="container" style="padding:60px 20px 100px;max-width:640px;">
+  <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);margin-bottom:10px;">Contacto</h1>
+  <p style="color:var(--muted);margin-bottom:36px;">Tens alguma questão, sugestão ou queres colaborar connosco?</p>
+  <div class="form-group"><label class="form-label">Nome</label><input type="text" class="form-control" id="cName" placeholder="O teu nome"></div>
+  <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="cEmail" placeholder="o.teu@email.com"></div>
+  <div class="form-group"><label class="form-label">Assunto</label>
+    <select class="form-control" id="cSubject">
+      <option>Questão geral</option><option>Reportar problema</option>
+      <option>Sugestão de artigo</option><option>Parceria ou colaboração</option><option>Outro</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Mensagem</label><textarea class="form-control" id="cMsg" rows="5" placeholder="A tua mensagem..."></textarea></div>
+  <button class="btn btn-primary" onclick="sendMsg()">Enviar mensagem</button>
+</div>
+<footer class="site-footer"><div class="container"><div class="footer-bottom">© 2025 DevBlog.</div></div></footer>
+<script src="js/db.js"></script>
+<script>
+renderNav();
+function sendMsg() {
+  const n = document.getElementById('cName').value.trim();
+  const e = document.getElementById('cEmail').value.trim();
+  const m = document.getElementById('cMsg').value.trim();
+  if (!n || !e || !m) { showToast('Preenche todos os campos.', 'error'); return; }
+  showToast('Mensagem enviada com sucesso! Responderemos em breve.', 'success');
+  document.getElementById('cName').value = '';
+  document.getElementById('cEmail').value = '';
+  document.getElementById('cMsg').value = '';
+}
+</script>
+</body>
+</html>

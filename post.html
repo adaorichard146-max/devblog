@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artigo — DevBlog</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar" id="mainNav">
+  <div class="container">
+    <div class="navbar-inner">
+      <a class="brand" href="index.html"><span class="brand-dot"></span>Dev<em>Blog</em></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">Sobre</a></li>
+      </ul>
+      <div class="nav-actions"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="post-layout">
+    <main class="post-main" id="postMain">
+      <div style="text-align:center;padding:60px;color:var(--muted);">A carregar artigo...</div>
+    </main>
+    <aside class="post-sidebar" id="postSidebar"></aside>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cols">
+      <div><div class="footer-brand">Dev<em>Blog</em></div><p class="footer-desc">Artigos técnicos para programadores.</p></div>
+      <div><div class="footer-col-title">Navegação</div><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="login.html">Entrar</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">© 2025 DevBlog.</div>
+  </div>
+</footer>
+
+<script src="js/db.js"></script>
+<script>
+const THUMB_MAP = { tecnologia:'bg-tech', design:'bg-design', tutoriais:'bg-tut', nodejs:'bg-node', mysql:'bg-mysql' };
+const BADGE_MAP = { tecnologia:'badge-tecnologia', design:'badge-design', tutoriais:'badge-tutoriais', nodejs:'badge-nodejs', mysql:'badge-mysql' };
+
+function reactionBoxHtml(postId) {
+  const r  = Reactions.byPost(postId);
+  const ur = Reactions.userReaction(postId);
+  return `
+    <div class="reaction-box" id="reactionBox">
+      <span class="reaction-label">Gostaste deste artigo?</span>
+      <div class="reactions">
+        <button class="react-btn ${ur === 'like' ? 'liked' : ''}" onclick="doReact('${postId}','like')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+          </svg>
+          <span id="likeCount">${r.likes}</span> Gostei
+        </button>
+        <button class="react-btn ${ur === 'dislike' ? 'disliked' : ''}" onclick="doReact('${postId}','dislike')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+          </svg>
+          <span id="dislikeCount">${r.dislikes}</span> Não gostei
+        </button>
+      </div>
+    </div>`;
+}
+
+function doReact(postId, type) {
+  const res = Reactions.toggle(postId, type);
+  if (!res.ok) { showToast('Entra para reagir a artigos.', 'info'); return; }
+  const box = document.getElementById('reactionBox');
+  if (box) box.outerHTML = reactionBoxHtml(postId);
+}
+
+function commentsHtml(postId) {
+  const comments = Comments.byPost(postId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const user    = Session.currentUser();
+  const isAdmin = user?.role === 'admin';
+
+  const commentList = comments.map(c => {
+    const avatarHtml = c.userAvatar
+      ? `<img src="${c.userAvatar}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;">`
+      : `<span>${c.userName[0]}</span>`;
+    const canDelete = isAdmin || user?.id === c.userId;
+    return `
+      <div class="comment-item" id="c-${c.id}">
+        <div class="comment-header">
+          <div class="avatar sm">${avatarHtml}</div>
+          <span class="comment-author">${c.userName}</span>
+          <span class="comment-date">${timeAgo(c.createdAt)}</span>
+          ${canDelete ? `<button class="comment-del" onclick="deleteComment('${c.id}','${postId}')">✕ apagar</button>` : ''}
+        </div>
+        <p class="comment-text">${c.text}</p>
+      </div>`;
+  }).join('');
+
+  const form = Session.isLoggedIn()
+    ? `<div class="comment-form">
+        <h4>Deixa o teu comentário</h4>
+        <div class="form-group">
+          <textarea class="form-control" id="cmtText" rows="3" placeholder="Escreve o teu comentário..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="submitComment('${postId}')">Publicar comentário</button>
+        </div>
+      </div>`
+    : `<div class="comment-form" style="text-align:center;">
+        <p style="color:var(--muted);margin-bottom:14px;">Entra para comentar.</p>
+        <a href="login.html" class="btn btn-primary">Entrar</a>
+        <a href="register.html" class="btn" style="margin-left:8px;">Registar</a>
+      </div>`;
+
+  return `
+    <div class="comments-section" id="commentsSection">
+      <h3 class="comments-title">
+        Comentários <span style="color:var(--muted);font-weight:400;font-size:18px;">(${comments.length})</span>
+      </h3>
+      <div id="commentsList">
+        ${commentList || '<p style="padding:20px 0;color:var(--muted);">Ainda sem comentários. Sê o primeiro!</p>'}
+      </div>
+      ${form}
+    </div>`;
+}
+
+function submitComment(postId) {
+  const ta   = document.getElementById('cmtText');
+  const text = ta?.value.trim();
+  if (!text) { showToast('Escreve algo antes de publicar.', 'error'); return; }
+  Comments.add(postId, text);
+  ta.value = '';
+  document.getElementById('commentsSection').outerHTML = commentsHtml(postId);
+  showToast('Comentário publicado!', 'success');
+}
+
+function deleteComment(commentId, postId) {
+  if (!confirm('Apagar este comentário?')) return;
+  Comments.delete(commentId);
+  document.getElementById('commentsSection').outerHTML = commentsHtml(postId);
+  showToast('Comentário apagado.', 'info');
+}
+
+function deletePost(postId) {
+  if (!confirm('Apagar este post? Esta acção não pode ser desfeita.')) return;
+  Posts.delete(postId);
+  showToast('Post apagado.', 'info');
+  setTimeout(() => window.location.href = 'index.html', 700);
+}
+
+function renderPost(post) {
+  const thumb    = THUMB_MAP[post.catSlug] || 'bg-tech';
+  const badge    = BADGE_MAP[post.catSlug] || 'badge-tecnologia';
+  const cat      = Cats.find(post.catId);
+  const user     = Session.currentUser();
+  const canEdit  = user?.role === 'admin' || user?.id === post.authorId;
+  const authorFull = Users.find(post.authorId);
+  const authorAvatar = authorFull?.avatar
+    ? `<img src="${authorFull.avatar}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;">`
+    : `<span>${post.authorName[0]}</span>`;
+
+  document.getElementById('postMain').innerHTML = `
+    <div class="breadcrumb">
+      <a href="index.html">Home</a> ›
+      <a href="index.html">${cat?.name || 'Artigos'}</a> ›
+      <span>${post.title.slice(0, 40)}${post.title.length > 40 ? '...' : ''}</span>
+    </div>
+
+    ${canEdit ? `
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <a href="editor.html?id=${post.id}" class="btn btn-sm">✎ Editar</a>
+        <button class="btn btn-sm btn-danger" onclick="deletePost('${post.id}')">Apagar post</button>
+      </div>` : ''
+    }
+
+    <span class="badge ${badge}">${cat?.name || ''}</span>
+    <h1 class="post-title">${post.title}</h1>
+    <div class="meta" style="margin-bottom:24px;">
+      <div class="avatar sm">${authorAvatar}</div>
+      <span class="meta-text">${post.authorName}</span>
+      <span class="meta-sep">·</span>
+      <span class="meta-text">${formatDate(post.createdAt)}</span>
+      <span class="meta-sep">·</span>
+      <span class="meta-text">${post.readTime} de leitura</span>
+    </div>
+
+    <div class="post-cover ${thumb}">
+      ${post.image
+        ? `<img src="${post.image}" alt="${post.title}">`
+        : `<span style="font-size:12px;color:rgba(0,0,0,.3);">Sem imagem de capa</span>`
+      }
+    </div>
+
+    <div class="post-body">${post.content}</div>
+
+    ${reactionBoxHtml(post.id)}
+    ${commentsHtml(post.id)}
+  `;
+}
+
+function renderSidebar(post) {
+  const counts = {};
+  Posts.published().forEach(p => { counts[p.catSlug] = (counts[p.catSlug] || 0) + 1; });
+
+  const authorFull = Users.find(post.authorId);
+  const authorAvatar = authorFull?.avatar
+    ? `<img src="${authorFull.avatar}" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">`
+    : `<span>${post.authorName[0]}</span>`;
+
+  const recent = Posts.recent(5).filter(p => p.id !== post.id);
+
+  document.getElementById('postSidebar').innerHTML = `
+    <div class="sidebar-card">
+      <div class="sidebar-title">Autor</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div class="avatar lg">${authorAvatar}</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;">${post.authorName}</div>
+          <div style="font-size:12px;color:var(--muted);">Escritor</div>
+        </div>
+      </div>
+      ${authorFull?.bio ? `<p style="font-size:12px;color:var(--muted);line-height:1.6;">${authorFull.bio}</p>` : ''}
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Categorias</div>
+      ${Cats.all().map(c => `
+        <div class="sidebar-cat" onclick="window.location.href='index.html'">
+          ${c.name}
+          <span class="cat-count">${counts[c.slug] || 0}</span>
+        </div>`).join('')}
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Artigos recentes</div>
+      ${recent.map(p => `
+        <div class="sidebar-recent">
+          <div class="sidebar-recent-title"
+               onclick="window.location.href='post.html?id=${p.id}'">${p.title}</div>
+          <div class="sidebar-recent-date">${formatDate(p.createdAt)}</div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+// Inicializar
+renderNav();
+
+const postId = new URLSearchParams(window.location.search).get('id');
+const post   = postId ? Posts.find(postId) : null;
+
+if (!post) {
+  document.getElementById('postMain').innerHTML = `
+    <div style="text-align:center;padding:80px 20px;">
+      <h2 style="font-family:var(--font-display);margin-bottom:12px;">Artigo não encontrado</h2>
+      <p style="color:var(--muted);margin-bottom:24px;">Este artigo não existe ou foi removido.</p>
+      <a href="index.html" class="btn btn-primary">← Voltar ao início</a>
+    </div>`;
+} else {
+  document.title = `${post.title} — DevBlog`;
+  renderPost(post);
+  renderSidebar(post);
+}
+</script>
+</body>
+</html>

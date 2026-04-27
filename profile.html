@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil — DevBlog</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar" id="mainNav">
+  <div class="container">
+    <div class="navbar-inner">
+      <a class="brand" href="index.html"><span class="brand-dot"></span>Dev<em>Blog</em></a>
+      <ul class="nav-links"><li><a href="index.html">Home</a></li></ul>
+      <div class="nav-actions"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding:40px 20px 80px;">
+  <div id="profileWrap"></div>
+</div>
+
+<!-- MODAL: Pedir promoção -->
+<div class="modal-overlay hidden" id="promoModal">
+  <div class="modal-box">
+    <h3 class="modal-title">Pedir promoção a Escritor</h3>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.7;">
+      Explica porque queres tornar-te escritor no DevBlog e que tipo de conteúdo pretendes criar.
+      O admin avaliará o teu pedido e poderá pedir-te um post de demonstração.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Motivação *</label>
+      <textarea class="form-control" id="promoText" rows="4"
+        placeholder="Porque é que queres ser escritor no DevBlog? Que tipo de conteúdo pretendes criar?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('promoModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitPromoRequest()">Enviar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Editar perfil -->
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal-box">
+    <h3 class="modal-title">Editar perfil</h3>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input type="text" class="form-control" id="editName" placeholder="O teu nome">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bio</label>
+      <textarea class="form-control" id="editBio" rows="3" placeholder="Conta algo sobre ti..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nova password <small style="color:var(--hint);font-weight:400;">(deixa em branco para manter)</small></label>
+      <input type="password" class="form-control" id="editPass" placeholder="Nova password">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('editModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProfileChanges()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Post de demonstração -->
+<div class="modal-overlay hidden" id="testPostModal">
+  <div class="modal-box">
+    <h3 class="modal-title">Post de demonstração</h3>
+    <div id="testThemeNotice" style="display:none;background:var(--accent-lt);border:1px solid #85B7EB;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--accent);"></div>
+    <div class="form-group">
+      <label class="form-label">Título do post *</label>
+      <input type="text" class="form-control" id="testTitle" placeholder="Título do artigo de demonstração">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoria</label>
+      <select class="form-control" id="testCat"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Conteúdo *</label>
+      <textarea class="form-control" id="testContent" rows="6"
+        placeholder="Escreve o teu artigo de demonstração aqui. Podes usar texto simples ou HTML básico..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('testPostModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitTestPost()">Submeter para avaliação</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script>
+if (!Session.isLoggedIn()) window.location.href = 'login.html';
+
+const ROLE_LABEL = { leitor: 'Leitor', escritor: 'Escritor', admin: 'Admin' };
+const ROLE_CSS   = { leitor: 'role-leitor', escritor: 'role-escritor', admin: 'role-admin' };
+
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function render() {
+  renderNav(); // Actualiza navbar com avatar fresco
+  const user   = Session.currentUser();
+  const full   = Users.find(user.id);
+  const promo  = Promotions.byUser(user.id);
+
+  const myPosts    = Posts.all().filter(p => p.authorId === user.id);
+  const myComments = Comments.all().filter(c => c.userId === user.id);
+  const myReactions= Reactions.all().filter(r => r.userId === user.id);
+
+  // Avatar do perfil
+  const avatarContent = full?.avatar
+    ? `<img src="${full.avatar}" alt="Avatar">`
+    : `<span>${(user.name || 'U')[0].toUpperCase()}</span>`;
+
+  // Secção de promoção (só para leitores)
+  let promoSection = '';
+  if (user.role === 'leitor') {
+    if (promo) {
+      if (promo.testPost) {
+        promoSection = `
+          <div class="alert alert-success show" style="margin-top:12px;">
+            ✅ Post de demonstração submetido! O admin está a avaliar o teu pedido.
+          </div>`;
+      } else if (promo.testRequested) {
+        promoSection = `
+          <div class="alert alert-info show" style="margin-top:12px;">
+            ✍️ O admin pediu-te um post de demonstração
+            ${promo.testTheme ? `com o tema: <strong>"${promo.testTheme}"</strong>` : ''}.
+            <br>
+            <button class="btn btn-sm btn-primary" style="margin-top:10px;"
+                    onclick="openTestPostModal()">
+              Escrever post de demonstração
+            </button>
+          </div>`;
+      } else {
+        promoSection = `
+          <div class="alert alert-info show" style="margin-top:12px;">
+            ⏳ Pedido de promoção enviado. Aguarda a avaliação do admin.
+          </div>`;
+      }
+    } else {
+      promoSection = `
+        <button class="btn btn-sm" style="margin-top:10px;" onclick="openModal('promoModal')">
+          Pedir promoção a Escritor
+        </button>`;
+    }
+  }
+
+  document.getElementById('profileWrap').innerHTML = `
+    <div class="profile-header">
+      <!-- Avatar com upload -->
+      <label class="avatar-upload" title="Clica para alterar a foto">
+        <div class="avatar-xl">${avatarContent}</div>
+        <div class="avatar-upload-ring"><span>Alterar<br>foto</span></div>
+        <input type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this)">
+      </label>
+
+      <!-- Informações -->
+      <div style="flex:1;min-width:0;">
+        <h1 style="font-family:var(--font-display);font-size:24px;">${full?.name || user.name}</h1>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0;">${user.email}</p>
+        ${full?.bio ? `<p style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6;">${full.bio}</p>` : ''}
+        <span class="role-badge ${ROLE_CSS[user.role] || 'role-leitor'}">${ROLE_LABEL[user.role] || user.role}</span>
+        ${promoSection}
+      </div>
+
+      <!-- Acções -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;align-items:flex-start;">
+        <button class="btn btn-sm" onclick="openEditModal()">Editar perfil</button>
+        ${Session.hasRole('admin', 'escritor')
+          ? `<a href="editor.html" class="btn btn-sm btn-primary">+ Novo Post</a>`
+          : ''
+        }
+        <button class="btn btn-sm btn-danger" onclick="logoutUser()">Sair</button>
+      </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;">
+      <div class="sidebar-card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:500;color:var(--accent);">${myPosts.length}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Posts criados</div>
+      </div>
+      <div class="sidebar-card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:500;color:var(--green);">${myComments.length}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Comentários</div>
+      </div>
+      <div class="sidebar-card" style="text-align:center;">
+        <div style="font-size:28px;font-weight:500;color:var(--amber);">${myReactions.length}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Reações dadas</div>
+      </div>
+    </div>
+
+    ${myPosts.length > 0 ? `
+      <div class="section-header"><h2>Os meus posts</h2><div class="section-line"></div></div>
+      <div class="admin-card" style="margin-bottom:32px;">
+        <table class="data-table">
+          <thead><tr><th>Título</th><th>Estado</th><th>Data</th><th>Acções</th></tr></thead>
+          <tbody>${myPosts.map(p => `
+            <tr>
+              <td class="td-title">${p.title}</td>
+              <td><span class="status-pill ${p.status === 'publicado' ? 's-pub' : 's-draf'}">${p.status}</span></td>
+              <td style="font-size:12px;color:var(--muted);">${formatDate(p.createdAt)}</td>
+              <td>
+                ${p.status === 'publicado' ? `<a href="post.html?id=${p.id}" class="act-link">Ver</a>` : ''}
+                <a href="editor.html?id=${p.id}" class="act-link">Editar</a>
+                <button class="act-link del" onclick="deleteMyPost('${p.id}')">Apagar</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''
+    }
+
+    ${myComments.length > 0 ? `
+      <div class="section-header"><h2>Os meus comentários</h2><div class="section-line"></div></div>
+      <div class="admin-card">
+        <table class="data-table">
+          <thead><tr><th>Comentário</th><th>Post</th><th>Data</th><th></th></tr></thead>
+          <tbody>${myComments.slice().reverse().map(c => {
+            const post = Posts.find(c.postId);
+            return `<tr>
+              <td style="font-size:13px;max-width:260px;">${c.text.slice(0, 90)}${c.text.length > 90 ? '...' : ''}</td>
+              <td style="font-size:12px;color:var(--muted);">${post ? post.title.slice(0, 35) + '...' : 'Post removido'}</td>
+              <td style="font-size:12px;color:var(--muted);">${timeAgo(c.createdAt)}</td>
+              <td><button class="act-link del" onclick="deleteMyComment('${c.id}')">Apagar</button></td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>` : ''
+    }
+  `;
+}
+
+// ── AVATAR ──
+async function uploadAvatar(input) {
+  const f = input.files[0];
+  if (!f) return;
+  if (f.size > 3 * 1024 * 1024) { showToast('Imagem demasiado grande (máx. 3MB).', 'error'); return; }
+  showToast('A processar foto...', 'info');
+  try {
+    const dataUrl = await ImgUtil.avatar(f);
+    Users.update(Session.currentUser().id, { avatar: dataUrl }); // FIX #1 — guarda no localStorage
+    showToast('Foto de perfil actualizada!', 'success');
+    render(); // Re-renderiza para mostrar foto nova
+  } catch {
+    showToast('Erro ao processar a foto.', 'error');
+  }
+}
+
+// ── EDITAR PERFIL ──
+function openEditModal() {
+  const full = Users.find(Session.currentUser().id);
+  document.getElementById('editName').value = full?.name || '';
+  document.getElementById('editBio').value  = full?.bio  || '';
+  document.getElementById('editPass').value = '';
+  openModal('editModal');
+}
+
+function saveProfileChanges() {
+  const name = document.getElementById('editName').value.trim();
+  const bio  = document.getElementById('editBio').value.trim();
+  const pass = document.getElementById('editPass').value;
+  if (!name) { showToast('O nome não pode estar vazio.', 'error'); return; }
+  const data = { name, bio };
+  if (pass) data.password = pass;
+  Users.update(Session.currentUser().id, data);
+  closeModal('editModal');
+  showToast('Perfil actualizado!', 'success');
+  render();
+}
+
+// ── PROMOÇÃO ──
+function submitPromoRequest() {
+  const text = document.getElementById('promoText').value.trim();
+  if (!text) { showToast('Escreve a tua motivação.', 'error'); return; }
+  const result = Promotions.request(text);
+  if (!result.ok) { showToast(result.error, 'error'); return; }
+  closeModal('promoModal');
+  showToast('Pedido enviado! O admin será notificado.', 'success');
+  render();
+}
+
+// ── POST DE DEMONSTRAÇÃO ──
+function openTestPostModal() {
+  const promo = Promotions.byUser(Session.currentUser().id);
+  const notice = document.getElementById('testThemeNotice');
+  if (promo?.testTheme) {
+    notice.textContent = `Tema sugerido pelo admin: "${promo.testTheme}"`;
+    notice.style.display = 'block';
+  } else {
+    notice.style.display = 'none';
+  }
+  // Preencher categorias
+  const catSel = document.getElementById('testCat');
+  catSel.innerHTML = Cats.all().map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  openModal('testPostModal');
+}
+
+function submitTestPost() {
+  const title   = document.getElementById('testTitle').value.trim();
+  const content = document.getElementById('testContent').value.trim();
+  const catId   = document.getElementById('testCat').value;
+  if (!title || !content) { showToast('Preenche o título e o conteúdo.', 'error'); return; }
+  const promo = Promotions.byUser(Session.currentUser().id);
+  if (!promo) { showToast('Pedido de promoção não encontrado.', 'error'); return; }
+  Promotions.submitTestPost(promo.id, title, content, catId);
+  closeModal('testPostModal');
+  showToast('Post submetido! O admin será notificado para avaliar.', 'success');
+  render();
+}
+
+// ── APAGAR ──
+function deleteMyPost(id) {
+  if (!confirm('Apagar este post e todos os seus comentários?')) return;
+  Posts.delete(id);
+  showToast('Post apagado.', 'info');
+  render();
+}
+
+function deleteMyComment(id) {
+  if (!confirm('Apagar este comentário?')) return;
+  Comments.delete(id);
+  showToast('Comentário apagado.', 'info');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

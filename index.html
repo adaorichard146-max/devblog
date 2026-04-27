@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevBlog — Tecnologia &amp; Código</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar" id="mainNav">
+  <div class="container">
+    <div class="navbar-inner">
+      <a class="brand" href="index.html"><span class="brand-dot"></span>Dev<em>Blog</em></a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="about.html">Sobre</a></li>
+        <li><a href="contact.html">Contacto</a></li>
+      </ul>
+      <div class="nav-actions"></div>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-tag">Bem-vindo ao DevBlog</div>
+    <h1>Código, Design<br>&amp; Tutoriais</h1>
+    <p>Artigos técnicos para programadores que querem crescer. Publicado por devs, para devs.</p>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Pesquisar artigos..." autocomplete="off">
+      <button onclick="doSearch()">Pesquisar</button>
+    </div>
+  </div>
+</section>
+
+<div class="cat-bar-wrap">
+  <div class="container">
+    <div class="cat-bar" id="catBar">
+      <button class="cat-pill active" data-cat="all">Todos</button>
+    </div>
+  </div>
+</div>
+
+<section style="padding: 48px 0 80px;">
+  <div class="container">
+    <!-- FIX #8: Post em destaque separado dos recentes -->
+    <div id="featuredSection"></div>
+
+    <div class="section-header">
+      <h2>Artigos recentes</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="posts-grid" id="postsGrid"></div>
+
+    <div id="emptyState" class="hidden" style="text-align:center;padding:60px;color:var(--muted);">
+      <p style="font-size:20px;margin-bottom:8px;">Sem artigos encontrados.</p>
+      <p>Tenta outra pesquisa ou categoria.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cols">
+      <div>
+        <div class="footer-brand">Dev<em>Blog</em></div>
+        <p class="footer-desc">Artigos técnicos para programadores. Publicado por devs, para devs.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Categorias</div>
+        <ul class="footer-links" id="footerCats"></ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Blog</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">Sobre</a></li>
+          <li><a href="contact.html">Contacto</a></li>
+          <li><a href="login.html">Entrar</a></li>
+          <li><a href="register.html">Registar</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Newsletter</div>
+        <p class="footer-desc" style="margin-bottom:12px;">Recebe notificações de novos artigos na tua conta.</p>
+        <div class="newsletter-row">
+          <input type="email" id="newsletterEmail" class="newsletter-input" placeholder="o.teu@email.com">
+          <button class="newsletter-btn" onclick="doSubscribe()">Subscrever</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2025 DevBlog. Todos os direitos reservados.</div>
+  </div>
+</footer>
+
+<script src="js/db.js"></script>
+<script>
+// Mapa de estilos por categoria
+const THUMB_MAP = {
+  tecnologia: 'bg-tech', design: 'bg-design',
+  tutoriais: 'bg-tut', nodejs: 'bg-node', mysql: 'bg-mysql',
+};
+const BADGE_MAP = {
+  tecnologia: 'badge-tecnologia', design: 'badge-design',
+  tutoriais: 'badge-tutoriais',   nodejs: 'badge-nodejs', mysql: 'badge-mysql',
+};
+
+// Componente: botões de reação
+function reactionsHtml(postId) {
+  const r  = Reactions.byPost(postId);
+  const ur = Reactions.userReaction(postId);
+  const cc = Comments.byPost(postId).length;
+  return `
+    <div class="reactions" data-post="${postId}">
+      <button class="react-btn ${ur === 'like' ? 'liked' : ''}"
+              onclick="doReact('${postId}','like',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+        </svg>
+        <span>${r.likes}</span>
+      </button>
+      <button class="react-btn ${ur === 'dislike' ? 'disliked' : ''}"
+              onclick="doReact('${postId}','dislike',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+        </svg>
+        <span>${r.dislikes}</span>
+      </button>
+      <span class="comment-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        ${cc}
+      </span>
+    </div>`;
+}
+
+function doReact(postId, type, btn) {
+  const res = Reactions.toggle(postId, type);
+  if (!res.ok) { showToast('Entra para reagir a artigos.', 'info'); return; }
+  const wrap = btn.closest('.reactions');
+  if (wrap) wrap.outerHTML = reactionsHtml(postId);
+}
+
+// Componente: card de post
+function postCardHtml(post, delay = 0) {
+  const thumb = THUMB_MAP[post.catSlug] || 'bg-tech';
+  const badge = BADGE_MAP[post.catSlug] || 'badge-tecnologia';
+  const cat   = Cats.find(post.catId);
+  const imgHtml = post.image ? `<img src="${post.image}" alt="${post.title}">` : '';
+  return `
+    <div class="post-card" data-cat="${post.catSlug}" style="animation-delay:${delay}ms">
+      <a href="post.html?id=${post.id}" class="card-thumb ${thumb}">
+        ${imgHtml}
+        <span class="thumb-label">${cat?.name || ''}</span>
+      </a>
+      <div class="card-body">
+        <span class="badge ${badge}">${cat?.name || ''}</span>
+        <h3><a href="post.html?id=${post.id}" style="color:inherit;">${post.title}</a></h3>
+        <p>${post.excerpt}</p>
+        <div class="meta">
+          <div class="avatar sm">${post.authorName[0]}</div>
+          <span class="meta-text">${post.authorName}</span>
+          <span class="meta-sep">·</span>
+          <span class="meta-text">${timeAgo(post.createdAt)}</span>
+          <span class="meta-sep">·</span>
+          <span class="meta-text">${post.readTime}</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        ${reactionsHtml(post.id)}
+        <a href="post.html?id=${post.id}" class="read-link">Ler →</a>
+      </div>
+    </div>`;
+}
+
+// Componente: post em destaque
+function featuredHtml(post) {
+  const thumb = THUMB_MAP[post.catSlug] || 'bg-tech';
+  const badge = BADGE_MAP[post.catSlug] || 'badge-tecnologia';
+  const cat   = Cats.find(post.catId);
+  const imgHtml = post.image ? `<img src="${post.image}" alt="${post.title}">` : '';
+  return `
+    <div class="featured">
+      <a href="post.html?id=${post.id}" class="featured-img ${thumb}">
+        ${imgHtml}
+        <span class="featured-label">Em destaque</span>
+      </a>
+      <div class="featured-body">
+        <span class="badge ${badge}">${cat?.name || ''}</span>
+        <h2><a href="post.html?id=${post.id}" style="color:inherit;">${post.title}</a></h2>
+        <p>${post.excerpt}</p>
+        <div class="meta" style="margin-bottom:16px;">
+          <div class="avatar sm">${post.authorName[0]}</div>
+          <span class="meta-text">${post.authorName}</span>
+          <span class="meta-sep">·</span>
+          <span class="meta-text">${formatDate(post.createdAt)}</span>
+          <span class="meta-sep">·</span>
+          <span class="meta-text">${post.readTime}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          ${reactionsHtml(post.id)}
+          <a href="post.html?id=${post.id}" class="btn btn-primary btn-sm">Ler artigo →</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Estado da UI
+let currentCat    = 'all';
+let currentSearch = '';
+
+// FIX #8: renderizar com separação correcta de featured e recentes
+function renderPage() {
+  const published = Posts.published(); // já vem ordenado por data
+
+  // Secção de destaque: só na vista "Todos" sem pesquisa
+  const featPost = published.find(p => p.featured);
+  const showFeatured = featPost && currentCat === 'all' && !currentSearch;
+  document.getElementById('featuredSection').innerHTML =
+    showFeatured ? featuredHtml(featPost) : '';
+
+  // Posts recentes: filtrar por categoria/pesquisa, SEM excluir o featured do grid
+  // (o featured aparece no grid igual aos outros quando há filtro activo)
+  let filtered = published.filter(p => {
+    const matchCat    = currentCat === 'all' || p.catSlug === currentCat;
+    const q           = currentSearch.toLowerCase();
+    const matchSearch = !q || p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  // Na homepage sem filtro, o featured já aparece em cima — removemos do grid para não duplicar
+  if (showFeatured) {
+    filtered = filtered.filter(p => p.id !== featPost.id);
+  }
+
+  document.getElementById('postsGrid').innerHTML =
+    filtered.map((p, i) => postCardHtml(p, i * 55)).join('');
+  document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
+}
+
+// Construir barra de categorias
+function buildCatBar() {
+  const bar    = document.getElementById('catBar');
+  const counts = {};
+  Posts.published().forEach(p => { counts[p.catSlug] = (counts[p.catSlug] || 0) + 1; });
+
+  Cats.all().forEach(cat => {
+    if (!counts[cat.slug]) return;
+    const btn = document.createElement('button');
+    btn.className    = 'cat-pill';
+    btn.dataset.cat  = cat.slug;
+    btn.textContent  = `${cat.name} (${counts[cat.slug]})`;
+    bar.appendChild(btn);
+  });
+
+  bar.addEventListener('click', e => {
+    const pill = e.target.closest('.cat-pill');
+    if (!pill) return;
+    bar.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentCat = pill.dataset.cat;
+    renderPage();
+  });
+}
+
+// Pesquisa
+function doSearch() {
+  currentSearch = document.getElementById('searchInput').value.trim();
+  renderPage();
+}
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// Filtrar por categoria (footer)
+function filterByCat(slug) {
+  currentCat = slug;
+  document.querySelectorAll('.cat-pill').forEach(p =>
+    p.classList.toggle('active', p.dataset.cat === slug)
+  );
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Newsletter
+function doSubscribe() {
+  const emailInput = document.getElementById('newsletterEmail');
+  const email = emailInput?.value?.trim() || '';
+  if (!email && !Session.isLoggedIn()) {
+    showToast('Introduz o teu email para subscreveres.', 'error');
+    return;
+  }
+  const result = Newsletter.subscribe(email);
+  showToast(result.msg, result.ok ? 'success' : 'info');
+  if (result.ok && emailInput) emailInput.value = '';
+  renderNav();
+}
+
+// Footer categorias
+document.getElementById('footerCats').innerHTML = Cats.all()
+  .map(c => `<li><a href="#" onclick="event.preventDefault();filterByCat('${c.slug}')">${c.name}</a></li>`)
+  .join('');
+
+// Inicializar
+renderNav();
+buildCatBar();
+renderPage();
+</script>
+</body>
+</html>

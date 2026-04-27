@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — DevBlog</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Admin usa variáveis CSS para temas */
+    :root { --adm-sidebar: #18171A; --adm-accent: #6B9CF6; }
+    body  { background: #F0EFF9; }
+  </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-brand">
+      <span class="brand-dot" id="sideAccentDot"></span>
+      Dev<em>Blog</em>
+    </div>
+
+    <div class="admin-section-label">Geral</div>
+    <a class="admin-nav-item active" href="#" onclick="switchTab('dashboard', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a class="admin-nav-item" href="../index.html">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Ver blog
+    </a>
+    <a class="admin-nav-item" href="../editor.html">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+      Novo post
+    </a>
+
+    <div class="admin-section-label">Conteúdo</div>
+    <a class="admin-nav-item" href="#" onclick="switchTab('posts', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      Posts
+    </a>
+    <a class="admin-nav-item" href="#" onclick="switchTab('comments', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Comentários
+    </a>
+
+    <div class="admin-section-label">Comunidade</div>
+    <a class="admin-nav-item" href="#" onclick="switchTab('users', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Utilizadores
+    </a>
+    <a class="admin-nav-item" href="#" id="promoNavItem" onclick="switchTab('promotions', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+      Promoções
+      <span class="admin-nav-badge hidden" id="promoBadge">0</span>
+    </a>
+
+    <div class="admin-section-label">Sistema</div>
+    <a class="admin-nav-item" href="#" onclick="switchTab('theme', this); return false;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Tema do painel
+    </a>
+
+    <div class="admin-sidebar-footer">
+      <div class="admin-user-btn" onclick="window.location.href='../profile.html'">
+        <div class="avatar sm" id="sideAvatar" style="background:var(--adm-accent);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.7);" id="sideUserName">Admin</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="nav-actions"></div>
+        <button class="btn btn-sm btn-danger" onclick="logoutUser()">Sair</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- DASHBOARD -->
+      <div class="tab-panel active" id="tab-dashboard">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h3>Posts recentes</h3>
+            <a href="#" onclick="switchTab('posts', document.querySelectorAll('.admin-nav-item')[4]); return false;"
+               style="font-size:12px;color:var(--accent);">Ver todos →</a>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Título</th><th>Estado</th><th>Data</th><th>Acções</th></tr></thead>
+            <tbody id="recentTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- POSTS -->
+      <div class="tab-panel" id="tab-posts">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h3>Todos os posts</h3>
+            <a href="../editor.html" class="btn btn-primary btn-sm">+ Novo post</a>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Título</th><th>Categoria</th><th>Autor</th><th>Estado</th><th>Reações</th><th>Data</th><th>Acções</th></tr></thead>
+            <tbody id="postsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COMMENTS -->
+      <div class="tab-panel" id="tab-comments">
+        <div class="admin-card">
+          <div class="admin-card-head"><h3>Todos os comentários</h3></div>
+          <table class="data-table">
+            <thead><tr><th>Utilizador</th><th>Comentário</th><th>Post</th><th>Data</th><th></th></tr></thead>
+            <tbody id="cmtTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="tab-panel" id="tab-users">
+        <div class="admin-card">
+          <div class="admin-card-head"><h3>Utilizadores registados</h3></div>
+          <table class="data-table">
+            <thead><tr><th>Utilizador</th><th>Email</th><th>Role</th><th>Registado</th><th>Acções</th></tr></thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PROMOTIONS -->
+      <div class="tab-panel" id="tab-promotions">
+        <div id="promosWrap"></div>
+      </div>
+
+      <!-- THEME -->
+      <div class="tab-panel" id="tab-theme">
+        <div class="admin-card">
+          <div class="admin-card-head"><h3>Tema do painel administrativo</h3></div>
+          <div style="padding:20px;">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">
+              Escolhe o esquema de cores do painel. A preferência é guardada automaticamente.
+            </p>
+            <div class="theme-grid" id="themeGrid"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Pedir post de teste -->
+<div class="modal-overlay hidden" id="testReqModal">
+  <div class="modal-box">
+    <h3 class="modal-title">Pedir post de demonstração</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+      O utilizador receberá uma notificação na conta a pedir que escreva um post de demonstração para avaliação.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Tema sugerido <small style="color:var(--hint);font-weight:400;">(opcional)</small></label>
+      <input type="text" class="form-control" id="testThemeInput"
+             placeholder="Ex: Explica como funciona o protocolo HTTP...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeTestModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendTestRequest()">Enviar notificação ao utilizador</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script>
+// ── GUARD ──
+if (!Session.isLoggedIn() || !Session.hasRole('admin')) {
+  alert('Acesso restrito a administradores.');
+  window.location.href = '../index.html';
+}
+
+const adminUser = Session.currentUser();
+document.getElementById('sideAvatar').textContent  = adminUser.name[0].toUpperCase();
+document.getElementById('sideUserName').textContent = adminUser.name.split(' ')[0];
+
+// FIX #7: Aplicar tema guardado
+const savedTheme = AdminTheme.get();
+AdminTheme.apply(savedTheme);
+
+// Actualizar cor do ponto da sidebar com o accent do tema
+function updateSidebarAccent() {
+  const t = AdminTheme.THEMES[AdminTheme.get()] || AdminTheme.THEMES.dark;
+  document.getElementById('sideAccentDot').style.background = t.accent;
+  document.getElementById('sideAvatar').style.background    = t.accent;
+}
+updateSidebarAccent();
+renderNav();
+
+const BADGE_MAP = {
+  tecnologia:'badge-tecnologia', design:'badge-design',
+  tutoriais:'badge-tutoriais',   nodejs:'badge-nodejs', mysql:'badge-mysql',
+};
+
+const TAB_TITLES = {
+  dashboard:'Dashboard', posts:'Posts', comments:'Comentários',
+  users:'Utilizadores',  promotions:'Promoções', theme:'Tema do painel',
+};
+
+// ── TABS ──
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-item').forEach(a => a.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('pageTitle').textContent = TAB_TITLES[name] || name;
+  if (name === 'promotions') renderPromotions();
+  if (name === 'theme')      renderTheme();
+}
+
+// ── STATS ──
+function renderStats() {
+  const pending = Promotions.count();
+  const badge   = document.getElementById('promoBadge');
+  if (pending > 0) { badge.textContent = pending; badge.classList.remove('hidden'); }
+  else             { badge.classList.add('hidden'); }
+
+  document.getElementById('statsGrid').innerHTML = [
+    { n: Posts.pubCount(),   l: 'Posts publicados',     c: 'var(--accent)' },
+    { n: Posts.draftCount(), l: 'Rascunhos',            c: 'var(--amber)'  },
+    { n: Users.count(),      l: 'Utilizadores',         c: 'var(--green)'  },
+    { n: pending,            l: 'Promoções pendentes',  c: 'var(--purple)' },
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-num" style="color:${s.c};">${s.n}</div>
+      <div class="stat-label">${s.l}</div>
+    </div>`).join('');
+}
+
+// ── RECENT POSTS (dashboard) ──
+function renderRecent() {
+  document.getElementById('recentTbody').innerHTML = Posts.all()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5)
+    .map(p => `
+      <tr>
+        <td class="td-title">${p.title}</td>
+        <td><span class="status-pill ${p.status === 'publicado' ? 's-pub' : 's-draf'}">${p.status}</span></td>
+        <td style="font-size:12px;color:var(--muted);">${formatDate(p.createdAt)}</td>
+        <td>
+          <a href="../editor.html?id=${p.id}" class="act-link">Editar</a>
+          <button class="act-link del" onclick="delPost('${p.id}')">Apagar</button>
+        </td>
+      </tr>`).join('');
+}
+
+// ── ALL POSTS ──
+function renderPosts() {
+  document.getElementById('postsTbody').innerHTML = Posts.all()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map(p => {
+      const r = Reactions.byPost(p.id);
+      const badgeClass = BADGE_MAP[p.catSlug] || '';
+      return `
+        <tr>
+          <td class="td-title">${p.featured ? '⭐ ' : ''}${p.title}</td>
+          <td><span class="badge ${badgeClass}" style="font-size:10px;">${Cats.find(p.catId)?.name || ''}</span></td>
+          <td style="font-size:12px;">${p.authorName}</td>
+          <td><span class="status-pill ${p.status === 'publicado' ? 's-pub' : 's-draf'}">${p.status}</span></td>
+          <td style="font-size:12px;color:var(--muted);">▲${r.likes} ▼${r.dislikes}</td>
+          <td style="font-size:12px;color:var(--muted);">${formatDate(p.createdAt)}</td>
+          <td>
+            ${p.status !== 'publicado'
+              ? `<button class="act-link" style="color:var(--green);" onclick="setPostStatus('${p.id}','publicado')">Publicar</button>`
+              : `<button class="act-link" onclick="setPostStatus('${p.id}','rascunho')">Rascunho</button>`
+            }
+            <a href="../editor.html?id=${p.id}" class="act-link">Editar</a>
+            <button class="act-link del" onclick="delPost('${p.id}')">Apagar</button>
+          </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── COMMENTS ──
+function renderComments() {
+  document.getElementById('cmtTbody').innerHTML = Comments.all()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map(c => {
+      const post = Posts.find(c.postId);
+      return `
+        <tr>
+          <td style="font-size:13px;font-weight:500;">${c.userName}</td>
+          <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.text}</td>
+          <td style="font-size:12px;color:var(--muted);">${post ? post.title.slice(0, 28) + '...' : 'Post removido'}</td>
+          <td style="font-size:12px;color:var(--muted);">${timeAgo(c.createdAt)}</td>
+          <td><button class="act-link del" onclick="delComment('${c.id}')">Apagar</button></td>
+        </tr>`;
+    }).join('');
+}
+
+// ── USERS ──
+function renderUsers() {
+  const ROLES = ['leitor', 'escritor', 'admin'];
+  document.getElementById('usersTbody').innerHTML = Users.all()
+    .map(u => {
+      const avatarHtml = u.avatar
+        ? `<img src="${u.avatar}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;" alt="">`
+        : `<span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:6px;">${u.name[0].toUpperCase()}</span>`;
+      const isSelf = u.id === adminUser.id;
+      return `
+        <tr>
+          <td style="font-size:13px;font-weight:500;">${avatarHtml}${u.name}</td>
+          <td style="font-size:12px;color:var(--muted);">${u.email}</td>
+          <td>
+            <select class="role-select" onchange="changeRole('${u.id}', this.value)" ${isSelf ? 'disabled' : ''}>
+              ${ROLES.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${r[0].toUpperCase() + r.slice(1)}</option>`).join('')}
+            </select>
+          </td>
+          <td style="font-size:12px;color:var(--muted);">${formatDate(u.createdAt)}</td>
+          <td>
+            ${!isSelf
+              ? `<button class="act-link del" onclick="delUser('${u.id}')">Apagar</button>`
+              : `<span style="font-size:11px;color:var(--hint);">(tu)</span>`
+            }
+          </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── PROMOTIONS ──
+let activePromoId = null;
+
+function renderPromotions() {
+  const promos = Promotions.all().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (promos.length === 0) {
+    document.getElementById('promosWrap').innerHTML = `
+      <div class="admin-card" style="padding:40px;text-align:center;color:var(--muted);">
+        Sem pedidos de promoção.
+      </div>`;
+    return;
+  }
+
+  const statusStyle = {
+    pendente:  'background:var(--amber-lt);color:var(--amber);',
+    aprovado:  'background:var(--green-lt);color:var(--green);',
+    rejeitado: 'background:var(--red-lt);color:var(--red);',
+  };
+
+  document.getElementById('promosWrap').innerHTML = promos.map(p => `
+    <div class="promo-card">
+      <div class="promo-head">
+        <div class="avatar" style="background:var(--purple);flex-shrink:0;">${p.userName[0]}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${p.userName}</div>
+          <div style="font-size:12px;color:var(--muted);">${p.userEmail} · ${timeAgo(p.createdAt)}</div>
+          ${p.testTheme ? `<div style="font-size:11px;color:var(--accent);margin-top:2px;">Tema pedido: "${p.testTheme}"</div>` : ''}
+        </div>
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;${statusStyle[p.status] || ''}">
+          ${p.status.toUpperCase()}
+        </span>
+      </div>
+
+      <div class="promo-motiv">
+        <strong style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--hint);display:block;margin-bottom:5px;">Motivação</strong>
+        ${p.motivation}
+      </div>
+
+      ${p.testPost ? `
+        <div class="promo-test">
+          <div class="promo-test-title">Post de demonstração — "${p.testPost.title}"</div>
+          <div class="promo-test-body">${p.testPost.content.slice(0, 400)}${p.testPost.content.length > 400 ? '...' : ''}</div>
+        </div>` : ''
+      }
+
+      ${p.testRequested && !p.testPost ? `
+        <p style="font-size:12px;color:var(--hint);font-style:italic;margin-bottom:12px;">
+          ⏳ A aguardar post de demonstração do utilizador...
+        </p>` : ''
+      }
+
+      ${p.status === 'pendente' ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${!p.testRequested ? `
+            <button class="btn btn-sm" onclick="openTestReqModal('${p.id}')">
+              ✍️ Pedir post de demonstração
+            </button>` : ''
+          }
+          <button class="btn btn-sm btn-success" onclick="decidePromo('${p.id}', true)">
+            ✓ Aprovar e promover a Escritor
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="decidePromo('${p.id}', false)">
+            ✕ Rejeitar pedido
+          </button>
+        </div>` : ''
+      }
+    </div>`).join('');
+}
+
+// ── THEME SWITCHER (FIX #7) ──
+function renderTheme() {
+  const current = AdminTheme.get();
+  document.getElementById('themeGrid').innerHTML = Object.entries(AdminTheme.THEMES)
+    .map(([key, theme]) => `
+      <div class="theme-opt ${key === current ? 'selected' : ''}" onclick="applyTheme('${key}', this)">
+        <div class="theme-swatch" style="background:${theme.sidebar};"></div>
+        <div class="theme-name">${theme.name}</div>
+      </div>`).join('');
+}
+
+function applyTheme(key, el) {
+  AdminTheme.set(key);
+  AdminTheme.apply(key);
+  updateSidebarAccent();
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('selected'));
+  el?.classList.add('selected');
+  showToast('Tema aplicado e guardado!', 'success');
+}
+
+// ── ACCÇÕES ──
+function openTestReqModal(promoId) {
+  activePromoId = promoId;
+  document.getElementById('testThemeInput').value = '';
+  document.getElementById('testReqModal').classList.remove('hidden');
+}
+
+function closeTestModal() {
+  document.getElementById('testReqModal').classList.add('hidden');
+  activePromoId = null;
+}
+
+function sendTestRequest() {
+  const theme = document.getElementById('testThemeInput').value.trim();
+  Promotions.requestTestPost(activePromoId, theme);
+  closeTestModal();
+  showToast('Pedido enviado! O utilizador recebeu uma notificação.', 'success');
+  renderPromotions();
+}
+
+function decidePromo(id, approved) {
+  const msg = approved
+    ? 'Promover este utilizador a Escritor? Ele será notificado da decisão.'
+    : 'Rejeitar este pedido? O utilizador será notificado da decisão.';
+  if (!confirm(msg)) return;
+  Promotions.decide(id, approved);
+  showToast(
+    approved ? 'Utilizador promovido! Notificação enviada.' : 'Pedido rejeitado. Notificação enviada.',
+    approved ? 'success' : 'info'
+  );
+  renderAll();
+}
+
+function setPostStatus(id, status) {
+  Posts.update(id, { status });
+  showToast(status === 'publicado' ? 'Post publicado!' : 'Movido para rascunho.', 'success');
+  renderAll();
+}
+
+function delPost(id) {
+  if (!confirm('Apagar este post e todos os seus comentários?')) return;
+  Posts.delete(id);
+  showToast('Post apagado.', 'info');
+  renderAll();
+}
+
+function delComment(id) {
+  if (!confirm('Apagar este comentário?')) return;
+  Comments.delete(id);
+  showToast('Comentário apagado.', 'info');
+  renderComments();
+  renderStats();
+}
+
+function changeRole(userId, role) {
+  Users.updateRole(userId, role);
+  showToast('Role actualizado.', 'success');
+  renderUsers();
+}
+
+function delUser(id) {
+  if (!confirm('Apagar este utilizador permanentemente? Esta acção não pode ser desfeita.')) return;
+  Users.delete(id);
+  showToast('Utilizador apagado.', 'info');
+  renderAll();
+}
+
+function renderAll() {
+  renderStats();
+  renderRecent();
+  renderPosts();
+  renderComments();
+  renderUsers();
+}
+
+renderAll();
+</script>
+</body>
+</html>
